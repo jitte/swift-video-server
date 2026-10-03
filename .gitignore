@@ -1,0 +1,16 @@
+# メディアファイル (サンプル動画など。サイズが大きいため管理外)
+/media/
+/*.MOV
+/*.mov
+/*.mp4
+
+# macOS
+.DS_Store
+
+# Swift
+/.build/
+/.swiftpm/
+*.xcodeproj
+
+# ビルド成果物 (アプリバンドル)
+/build/

@@ -1,0 +1,828 @@
+:root {
+  --bg: #111418;
+  --panel: #1a1f26;
+  --line: #2a313a;
+  --fg: #e8edf3;
+  --dim: #9aa7b4;
+  --accent: #4da3ff;
+  color-scheme: dark;
+}
+
+* { box-sizing: border-box; }
+
+body {
+  margin: 0;
+  background: var(--bg);
+  color: var(--fg);
+  font: 15px/1.5 -apple-system, BlinkMacSystemFont, "Hiragino Sans", "Noto Sans JP", sans-serif;
+  /* ホーム画面追加時にノッチへ潜り込まないようにする。 */
+  padding: env(safe-area-inset-top) env(safe-area-inset-right)
+           env(safe-area-inset-bottom) env(safe-area-inset-left);
+}
+
+/* ===== PIN 入力 ===== */
+
+#gate {
+  position: fixed;
+  inset: 0;
+  z-index: 100;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: var(--bg);
+  padding: 24px;
+}
+
+#gate[hidden] { display: none; }
+
+#gateForm {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 14px;
+  width: 100%;
+  max-width: 280px;
+}
+
+#gateForm h2 {
+  margin: 0;
+  font-size: 17px;
+  font-weight: 600;
+}
+
+#gatePin {
+  width: 100%;
+  background: var(--panel);
+  border: 1px solid var(--line);
+  border-radius: 10px;
+  color: var(--fg);
+  /* 16px 未満だと iOS が自動で拡大する */
+  font-size: 22px;
+  text-align: center;
+  letter-spacing: .4em;
+  padding: 12px;
+}
+
+#gatePin:focus { outline: 1px solid var(--accent); }
+
+#gateForm button {
+  width: 100%;
+  background: var(--accent);
+  border: 0;
+  border-radius: 10px;
+  color: #fff;
+  font-size: 16px;
+  padding: 11px;
+  cursor: pointer;
+  -webkit-tap-highlight-color: transparent;
+}
+
+#gateError {
+  margin: 0;
+  color: #ff8f8f;
+  font-size: 13px;
+}
+
+#gateError[hidden] { display: none; }
+
+/* ===== 一覧 ===== */
+
+#bar {
+  position: sticky;
+  top: 0;
+  z-index: 10;
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  padding: 12px 16px;
+  background: rgba(17, 20, 24, .92);
+  backdrop-filter: blur(12px);
+  border-bottom: 1px solid var(--line);
+}
+
+#bar h1 {
+  margin: 0;
+  font-size: 17px;
+  font-weight: 600;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+#up {
+  flex: none;
+  background: none;
+  border: 0;
+  color: var(--accent);
+  font-size: 16px;
+  padding: 4px 0;
+  cursor: pointer;
+}
+
+#tools {
+  position: sticky;
+  /* ヘッダの下に貼り付く。ヘッダの高さぶんだけ下げる。 */
+  top: 49px;
+  z-index: 9;
+  display: flex;
+  gap: 8px;
+  align-items: center;
+  padding: 10px 16px;
+  background: rgba(17, 20, 24, .92);
+  backdrop-filter: blur(12px);
+  border-bottom: 1px solid var(--line);
+}
+
+#filter {
+  flex: 1;
+  min-width: 0;
+  background: var(--panel);
+  border: 1px solid var(--line);
+  border-radius: 8px;
+  color: var(--fg);
+  font-size: 16px; /* 16px 未満だと iOS が自動で拡大する */
+  padding: 7px 10px;
+}
+
+#filter:focus { outline: 1px solid var(--accent); }
+
+#sortKey {
+  flex: none;
+  background: var(--panel);
+  border: 1px solid var(--line);
+  border-radius: 8px;
+  color: var(--fg);
+  font-size: 15px;
+  padding: 7px 6px;
+}
+
+#sortDir, #viewMode {
+  flex: none;
+  width: 38px;
+  background: var(--panel);
+  border: 1px solid var(--line);
+  border-radius: 8px;
+  color: var(--fg);
+  font-size: 16px;
+  padding: 7px 0;
+  cursor: pointer;
+  -webkit-tap-highlight-color: transparent;
+}
+
+#list {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(210px, 1fr));
+  gap: 14px;
+  padding: 16px;
+}
+
+.card {
+  background: var(--panel);
+  border: 1px solid var(--line);
+  border-radius: 10px;
+  overflow: hidden;
+  cursor: pointer;
+  display: flex;
+  flex-direction: column;
+  -webkit-tap-highlight-color: transparent;
+}
+
+.card:active { transform: scale(.985); }
+
+.thumb {
+  position: relative;
+  aspect-ratio: 16 / 9;
+  background: #0c0f13;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  overflow: hidden;
+}
+
+.thumb img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  display: block;
+}
+
+.thumb .glyph { font-size: 38px; opacity: .5; }
+
+.badge {
+  position: absolute;
+  right: 6px;
+  bottom: 6px;
+  background: rgba(0, 0, 0, .75);
+  border-radius: 4px;
+  padding: 1px 5px;
+  font-size: 12px;
+  font-variant-numeric: tabular-nums;
+}
+
+.meta { padding: 9px 11px; }
+
+.meta .name {
+  font-size: 14px;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.meta .sub {
+  color: var(--dim);
+  font-size: 12px;
+  margin-top: 2px;
+}
+
+.card .side { display: none; }
+
+/* ===== リスト表示 =====
+ *
+ * 一行一件の縦並び。左端に小さなサムネイル、中央に名前 (二行まで折り返す)、
+ * 右端に尺・形式・更新日を small に添える。
+ * 名前が長いものは格子だと切れてしまうので、読み切りたいときはこちら。 */
+
+#list.as-list {
+  grid-template-columns: 1fr;
+  gap: 0;
+  padding: 0;
+}
+
+#list.as-list .card {
+  flex-direction: row;
+  align-items: center;
+  gap: 6px;
+  border: 0;
+  border-bottom: 1px solid var(--line);
+  border-radius: 0;
+  background: none;
+  padding: 4px 16px;
+}
+
+#list.as-list .thumb {
+  flex: none;
+  width: 64px;
+  border-radius: 4px;
+}
+
+#list.as-list .thumb .glyph { font-size: 20px; }
+
+/* 尺は右端の欄に出すので、サムネイルの帯は要らない。 */
+#list.as-list .badge { display: none; }
+
+#list.as-list .meta {
+  flex: 1;
+  min-width: 0;
+  padding: 0;
+}
+
+#list.as-list .meta .name {
+  /* 二行までは折り返して見せ、それを超えたら省略する。 */
+  display: -webkit-box;
+  -webkit-box-orient: vertical;
+  -webkit-line-clamp: 2;
+  white-space: normal;
+  overflow: hidden;
+}
+
+#list.as-list .meta .sub { display: none; }
+
+/* 情報欄は叩ける。触れば形式と検査の画面が出る。
+ * 長押しだと iOS がテキスト選択を始めてしまうので、場所で分ける。
+ * 行を高くしないよう、広げるのは横だけにする。 */
+#list.as-list .side.tappable {
+  cursor: pointer;
+  user-select: none;
+  -webkit-user-select: none;
+  -webkit-touch-callout: none;
+  padding-left: 12px;
+  min-width: 4.5em;
+  border-radius: 6px;
+}
+
+#list.as-list .side.tappable:active { background: var(--panel); }
+
+#list.as-list .side {
+  display: flex;
+  flex: none;
+  flex-direction: column;
+  align-items: flex-end;
+  gap: 1px;
+  color: var(--dim);
+  font-size: 12px;
+  font-variant-numeric: tabular-nums;
+  white-space: nowrap;
+}
+
+.empty, .error {
+  grid-column: 1 / -1;
+  color: var(--dim);
+  padding: 40px 0;
+  text-align: center;
+}
+
+.error { color: #ff8f8f; }
+
+/* ===== プレーヤー =====
+ *
+ * 画面の作りは 2 通りある。
+ *
+ * 全画面でないとき (ブラウザのバーがある状態) は
+ * [上段] [映像] [操作列] を縦に並べ、可視領域をちょうど埋める。
+ * 映像は残り全部を使うので、操作 UI と映像が重ならず、
+ * 収まり切らずにページが動くこともない。
+ *
+ * 全画面のときは映像が全体に広がり、上段と操作列がその上に重なる。
+ * しばらく触らないと消え、触ると戻る。
+ */
+
+#player {
+  position: fixed;
+  left: 0;
+  top: var(--pt, 0px);
+  width: 100%;
+  /* 可視領域の高さ。JS が visualViewport から --ph を入れる。
+     iOS Safari の position:fixed はブラウザのバーを含む大きい方の領域が
+     基準なので、これをしないと下端の操作列がバーの裏に入り、
+     指で送るとページごと動いてしまう。 */
+  height: 100%;
+  height: var(--ph, 100dvh);
+  z-index: 50;
+  display: flex;
+  flex-direction: column;
+  background: #000;
+  overflow: hidden;
+  overscroll-behavior: none;
+  /* 操作 UI の寸法は可視領域の高さから決める。窓を縮めれば一緒に縮み、
+     広げれば見合った大きさになる。 */
+  /* 送り戻しと再生のボタン。速度や最大化のボタンと差がつきすぎない大きさにする。 */
+  --ctl: clamp(38px, calc(var(--ph, 100dvh) * .082), 48px);
+  --gap: clamp(8px, calc(var(--ph, 100dvh) * .018), 16px);
+}
+
+#player[hidden] { display: none; }
+
+/* 再生中は裏の一覧を動かさない。動くとプレーヤーの位置もずれる。
+   iOS では body だけだと html 側が動くことがあるので、両方に掛ける。 */
+html.playing, body.playing { overflow: hidden; }
+
+/* --- 映像 --- */
+
+#stage {
+  position: relative;
+  flex: 1;
+  min-height: 0;
+  background: #000;
+  /* タップ、ダブルタップ、スワイプ、二本指の操作はすべてこちらで拾う。
+     ブラウザにダブルタップ拡大やピンチ拡大として解釈させない。 */
+  touch-action: none;
+}
+
+#video, #vrCanvas {
+  position: absolute;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+  display: block;
+  background: #000;
+}
+
+#video { object-fit: contain; }
+
+/* VR 表示中はこの canvas が動画の上に重なる。
+   動画自体は再生したまま下に残す (テクスチャの取り込み元として要るため)。 */
+#vrCanvas { touch-action: none; }
+#vrCanvas[hidden] { display: none; }
+
+/* --- 上段と操作列 --- */
+
+#topBar, #controls {
+  flex: none;
+  display: flex;
+  align-items: center;
+  gap: var(--gap);
+  background: var(--panel);
+  z-index: 2;
+  transition: opacity .28s;
+}
+
+#topBar {
+  padding: max(calc(var(--gap) * .7), env(safe-area-inset-top))
+           max(14px, env(safe-area-inset-right))
+           calc(var(--gap) * .7)
+           max(14px, env(safe-area-inset-left));
+  border-bottom: 1px solid var(--line);
+}
+
+/* 送り戻しとシークバーは、幅があれば一列に、狭ければ二列に折り返す。 */
+#controls {
+  flex-wrap: wrap;
+  justify-content: center;
+  row-gap: calc(var(--gap) * .7);
+  padding: calc(var(--gap) * .7)
+           max(14px, env(safe-area-inset-right))
+           max(calc(var(--gap) * .7), env(safe-area-inset-bottom))
+           max(14px, env(safe-area-inset-left));
+  border-top: 1px solid var(--line);
+}
+
+.row {
+  display: flex;
+  align-items: center;
+  gap: var(--gap);
+  min-width: 0;
+}
+
+/* 操作ボタン。シークバーの右に並べる。 */
+.row.transport {
+  flex: none;
+  justify-content: center;
+  gap: clamp(10px, calc(var(--ph, 100dvh) * .026), 20px);
+}
+
+/* シークバーは左端に置く。幅が足りないときは折り返して一列を占める。 */
+.row.scrub { flex: 1 1 260px; }
+
+/* 一覧へ戻るボタンと題名の組。左端から VR の操作までの空いた幅を占め、
+   その中央に置く。VR の操作はこれに押されて右端に寄る。
+   題名が長いときは題名の方を省略して、ボタンは縮めない。 */
+#titleGroup {
+  flex: 1;
+  min-width: 0;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: var(--gap);
+}
+
+#nowPlaying {
+  color: var(--fg);
+  font-size: 14px;
+  min-width: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+/* 上段のボタンと選択欄は同じ高さに揃える。
+   後ろにある #player button / #player select の指定に負けないよう、id を重ねる。 */
+#player #topBar button, #player #topBar select {
+  box-sizing: border-box;
+  height: 34px;
+  padding-top: 0;
+  padding-bottom: 0;
+  font-size: 14px;
+}
+
+/* 一覧へ戻るボタン。全画面からも一手で戻れるよう上段に置く。
+   大きさは VR の操作と同じにし、映像の上に重なっても埋もれないよう
+   他のボタンより明るくする。 */
+#player #close {
+  flex: none;
+  font-weight: 600;
+  background: rgba(255, 255, 255, .16);
+  box-shadow: inset 0 0 0 1px rgba(255, 255, 255, .24);
+}
+
+#player.fs #close {
+  background: rgba(255, 255, 255, .22);
+  backdrop-filter: blur(8px);
+}
+
+#player button {
+  background: rgba(255, 255, 255, .1);
+  border: 0;
+  color: #fff;
+  border-radius: 10px;
+  padding: 8px 12px;
+  font-size: 15px;
+  cursor: pointer;
+  -webkit-tap-highlight-color: transparent;
+}
+
+#player button.big {
+  width: var(--ctl);
+  height: var(--ctl);
+  padding: 0;
+  border-radius: 50%;
+  font-size: calc(var(--ctl) * .28);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+#player button.play { font-size: calc(var(--ctl) * .4); }
+
+/* 操作列の再生速度と最大化。丸ボタンとの差が目立たないよう、少し大きめに揃える。 */
+#player #controls select, #player #controls button:not(.big) {
+  box-sizing: border-box;
+  height: clamp(34px, calc(var(--ph, 100dvh) * .068), 42px);
+  padding-top: 0;
+  padding-bottom: 0;
+  font-size: 15px;
+}
+
+#player select {
+  flex: none;
+  background: rgba(255, 255, 255, .1);
+  color: #fff;
+  border: 0;
+  border-radius: 8px;
+  padding: 6px;
+  font-size: 14px;
+}
+
+.time {
+  font-size: 13px;
+  font-variant-numeric: tabular-nums;
+  color: #fff;
+  flex: none;
+  min-width: 44px;
+  text-align: center;
+}
+
+#seek {
+  flex: 1;
+  min-width: 0;
+  accent-color: var(--accent);
+  height: 22px;
+}
+
+#vrSensor.on {
+  background: var(--accent);
+  color: #fff;
+}
+
+/* --- 全画面 --- */
+
+/* 上段と操作列を映像の上へ重ねる。映像は画面いっぱいになる。 */
+#player.fs #topBar,
+#player.fs #controls {
+  position: absolute;
+  left: 0;
+  right: 0;
+  border: 0;
+  background: transparent;
+}
+
+/* 画面の縁はタスク切り替えなどに使われるので、少し内側に置く。 */
+#player.fs #topBar {
+  top: 0;
+  background: linear-gradient(rgba(0, 0, 0, .6), rgba(0, 0, 0, 0));
+  padding: max(18px, calc(env(safe-area-inset-top) + 10px))
+           max(24px, calc(env(safe-area-inset-right) + 12px))
+           28px
+           max(24px, calc(env(safe-area-inset-left) + 12px));
+}
+
+#player.fs #controls {
+  bottom: 0;
+  background: linear-gradient(rgba(0, 0, 0, 0), rgba(0, 0, 0, .72));
+  padding: 28px
+           max(24px, calc(env(safe-area-inset-right) + 12px))
+           max(22px, calc(env(safe-area-inset-bottom) + 14px))
+           max(24px, calc(env(safe-area-inset-left) + 12px));
+}
+
+#player.fs button,
+#player.fs select { background: rgba(0, 0, 0, .5); }
+
+/* 自動で消えるが、操作すると戻る。消えている間は触れないようにする。 */
+#player.fs.ui-hidden #topBar,
+#player.fs.ui-hidden #controls {
+  opacity: 0;
+  pointer-events: none;
+}
+
+/* --- スワイプ中の送り先表示 --- */
+
+#seekHint {
+  position: absolute;
+  left: 50%;
+  top: 50%;
+  transform: translate(-50%, -50%);
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  background: rgba(0, 0, 0, .8);
+  border-radius: 10px;
+  padding: 12px;
+  font-size: 19px;
+  font-variant-numeric: tabular-nums;
+  pointer-events: none;
+}
+
+/* スプライトシートの一コマ分だけを切り出して見せる。
+   大きさと表示位置は JS 側が実寸で設定する。 */
+#seekThumb {
+  background-repeat: no-repeat;
+  background-color: #000;
+  border-radius: 6px;
+  margin-bottom: 8px;
+  box-shadow: 0 2px 12px rgba(0, 0, 0, .7);
+}
+
+#seekLabel { text-align: center; }
+
+#seekHint[hidden], #seekThumb[hidden], #spinner[hidden] { display: none; }
+
+/* --- 知らせと処理待ち --- */
+
+/* テクスチャにできなかったときなどの短い知らせ。 */
+#vrNote {
+  position: absolute;
+  left: 50%;
+  bottom: 12%;
+  transform: translateX(-50%);
+  max-width: 80%;
+  background: rgba(0, 0, 0, .82);
+  border-radius: 8px;
+  padding: 10px 14px;
+  font-size: 14px;
+  text-align: center;
+  pointer-events: none;
+}
+
+#vrNote[hidden] { display: none; }
+
+#spinner {
+  position: absolute;
+  left: 50%;
+  top: 50%;
+  width: 42px;
+  height: 42px;
+  margin: -21px 0 0 -21px;
+  border: 3px solid rgba(255, 255, 255, .25);
+  border-top-color: #fff;
+  border-radius: 50%;
+  animation: spin 1s linear infinite;
+  pointer-events: none;
+}
+
+@keyframes spin { to { transform: rotate(360deg); } }
+
+/* ===== 再生エラー =====
+ *
+ * 映像の上に重ねる。黒画面のまま放置せず、分かっていることを見せる。 */
+
+#playError {
+  position: absolute;
+  left: 50%;
+  top: 50%;
+  transform: translate(-50%, -50%);
+  z-index: 60;
+  width: min(560px, calc(100% - 32px));
+  max-height: 80%;
+  overflow: auto;
+  background: rgba(16, 20, 26, .96);
+  border: 1px solid var(--line);
+  border-radius: 12px;
+  padding: 16px;
+}
+
+#playError[hidden] { display: none; }
+#playError h3 { margin: 0 0 10px; font-size: 16px; }
+
+#playError .actions {
+  display: flex;
+  gap: 8px;
+  margin-top: 14px;
+}
+
+#playError .actions button {
+  flex: 1;
+  padding: 9px 6px;
+  border: 1px solid var(--line);
+  border-radius: 8px;
+  background: var(--panel);
+  color: var(--fg);
+  font-size: 14px;
+}
+
+#playErrorDiagnose { border-color: var(--accent) !important; color: var(--accent) !important; }
+
+/* ===== 診断 =====
+ *
+ * 一覧・プレーヤー・エラーのどこからでも同じものを出す。 */
+
+#diag {
+  position: fixed;
+  inset: 0;
+  z-index: 120;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: rgba(0, 0, 0, .6);
+  padding: 16px;
+}
+
+#diag[hidden] { display: none; }
+
+#diagSheet {
+  display: flex;
+  flex-direction: column;
+  width: min(620px, 100%);
+  max-height: 100%;
+  background: var(--bg);
+  border: 1px solid var(--line);
+  border-radius: 14px;
+  overflow: hidden;
+}
+
+#diagHead {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 12px 14px;
+  border-bottom: 1px solid var(--line);
+}
+
+#diagHead h2 {
+  flex: 1;
+  min-width: 0;
+  margin: 0;
+  font-size: 15px;
+  /* 長いファイル名でもボタンを押し出さない。二行まで見せる。 */
+  display: -webkit-box;
+  -webkit-box-orient: vertical;
+  -webkit-line-clamp: 2;
+  overflow: hidden;
+}
+
+#diagClose {
+  flex: none;
+  width: 34px;
+  height: 34px;
+  border: 1px solid var(--line);
+  border-radius: 8px;
+  background: var(--panel);
+  color: var(--fg);
+}
+
+#diagBody {
+  flex: 1;
+  overflow: auto;
+  padding: 12px 14px;
+}
+
+#diagBody h3 {
+  margin: 16px 0 6px;
+  font-size: 13px;
+  color: var(--dim);
+  font-weight: 600;
+}
+
+#diagBody h3:first-child { margin-top: 0; }
+
+#diagBody .note { color: var(--dim); padding: 8px 0; }
+
+/* 表の行。左に項目名、右に値。値は折り返して全部見せる。 */
+#diagBody .row, #playErrorBody .row {
+  display: flex;
+  gap: 10px;
+  padding: 3px 0;
+  align-items: baseline;
+}
+
+#diagBody .row .k, #playErrorBody .row .k {
+  flex: none;
+  width: 8.5em;
+  color: var(--dim);
+  font-size: 13px;
+}
+
+#diagBody .row .v, #playErrorBody .row .v {
+  flex: 1;
+  min-width: 0;
+  overflow-wrap: anywhere;
+}
+
+#diagBody .good .v { color: #6fd08c; }
+#diagBody .warn .v { color: #f0c274; }
+#diagBody .bad .v, #diagBody .note.bad { color: #ff8f8f; }
+
+#diagActions {
+  display: flex;
+  gap: 8px;
+  padding: 12px 14px;
+  border-top: 1px solid var(--line);
+}
+
+#diagActions button {
+  flex: 1;
+  padding: 10px 6px;
+  border: 1px solid var(--line);
+  border-radius: 8px;
+  background: var(--panel);
+  color: var(--fg);
+  font-size: 14px;
+}
+
+#diagQuick { border-color: var(--accent); color: var(--accent); }
+
+@media (max-width: 480px) {
+  #list { grid-template-columns: repeat(auto-fill, minmax(150px, 1fr)); gap: 10px; padding: 10px; }
+  #player select { font-size: 13px; padding: 5px 4px; }
+  /* 幅が無いときは題名より操作を優先する。 */
+  #nowPlaying { display: none; }
+}

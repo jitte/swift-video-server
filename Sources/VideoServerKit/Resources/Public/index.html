@@ -1,0 +1,141 @@
+<!doctype html>
+<html lang="ja">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<!-- ホーム画面に追加したときブラウザの UI を消す。
+     iPhone Safari は要素フルスクリーンに対応しないため、これが実質の全画面手段。 -->
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+<meta name="apple-mobile-web-app-title" content="Video Server">
+<meta name="theme-color" content="#111418">
+<title>Swift Video Server</title>
+<link rel="stylesheet" href="/style.css">
+</head>
+<body>
+
+<div id="gate" hidden>
+  <form id="gateForm">
+    <h2>PIN を入力</h2>
+    <input id="gatePin" type="password" inputmode="numeric" autocomplete="one-time-code"
+           placeholder="••••" aria-label="PIN">
+    <button type="submit">開く</button>
+    <p id="gateError" hidden></p>
+  </form>
+</div>
+
+<header id="bar">
+  <button id="up" type="button" hidden>&#8249; 戻る</button>
+  <h1 id="title">Swift Video Server</h1>
+</header>
+
+<div id="tools">
+  <input id="filter" type="search" placeholder="名前で絞り込む"
+         autocomplete="off" autocorrect="off" autocapitalize="off" spellcheck="false">
+  <select id="sortKey" aria-label="並べ替え">
+    <option value="name">名前順</option>
+    <option value="date">日付順</option>
+  </select>
+  <button id="sortDir" type="button" aria-label="昇順と降順を切り替える">&#8593;</button>
+  <button id="viewMode" type="button" aria-label="グリッドとリストを切り替える">&#9638;</button>
+</div>
+
+<main id="list" aria-live="polite"></main>
+
+<div id="player" hidden>
+  <!-- 上段: 一覧へ戻るボタンと題名の組、VR の操作。
+       組は左端から VR の操作までの空いた幅の中央に置く。
+       左端に置くと、iPad の全画面で左上に出る OS の「全画面を終える」
+       「ピクチャ・イン・ピクチャ」ボタンと重なるため。 -->
+  <div id="topBar">
+    <div id="titleGroup">
+      <button id="close" type="button">&#8249; 一覧へ戻る</button>
+      <span id="nowPlaying"></span>
+    </div>
+    <select id="vrProj" aria-label="VR の投影方式">
+      <option value="off">VR オフ</option>
+      <option value="equirect360">360°</option>
+      <option value="equirect180">180°</option>
+      <option value="fisheye180">魚眼 180°</option>
+    </select>
+    <select id="vrStereo" aria-label="立体方式" hidden>
+      <option value="mono">モノラル</option>
+      <option value="sbs">左右</option>
+      <option value="tb">上下</option>
+    </select>
+    <button id="vrSensor" type="button" hidden aria-label="センサー追随">&#128241;</button>
+    <button id="vrCenter" type="button" hidden aria-label="正面に戻す">&#8982;</button>
+  </div>
+
+  <!-- 映像。全画面でないときは上段と操作列を除いた残り全部を使う。 -->
+  <div id="stage">
+    <video id="video" playsinline webkit-playsinline preload="auto"></video>
+    <!-- VR 表示中はこの canvas が動画の上に重なる。
+         動画自体は再生したまま残す (テクスチャの取り込み元になるため)。 -->
+    <canvas id="vrCanvas" hidden></canvas>
+
+    <div id="seekHint" hidden></div>
+    <div id="spinner" hidden></div>
+    <div id="vrNote" hidden></div>
+  </div>
+
+  <!-- 操作列: シークバーを左端に置き、その右に操作ボタンを並べる。
+       幅があれば一列に、狭ければ二列に折り返す。並びは全画面でも同じ。 -->
+  <div id="controls">
+    <div class="row scrub">
+      <span id="cur" class="time">0:00</span>
+      <input id="seek" type="range" min="0" max="1" step="0.1" value="0" aria-label="再生位置">
+      <span id="dur" class="time">0:00</span>
+    </div>
+
+    <div class="row transport">
+      <button id="back30" type="button" class="big">-30</button>
+      <button id="playpause" type="button" class="big play">&#9654;</button>
+      <button id="fwd30" type="button" class="big">+30</button>
+      <select id="rate" aria-label="再生速度">
+        <option value="0.5">0.5x</option>
+        <option value="0.75">0.75x</option>
+        <option value="1" selected>1x</option>
+        <option value="1.25">1.25x</option>
+        <option value="1.5">1.5x</option>
+        <option value="2">2x</option>
+      </select>
+      <button id="info" type="button" aria-label="この動画の形式を見る">&#9432;</button>
+      <button id="full" type="button" aria-label="全画面">&#9974;</button>
+    </div>
+  </div>
+
+  <!-- 再生できなかったときに、ブラウザ側とサーバ側の言い分を並べて出す。
+       どちらが躓いたのか分からないまま黒画面を見ることがないように。 -->
+  <div id="playError" hidden>
+    <h3>再生できませんでした</h3>
+    <div id="playErrorBody"></div>
+    <div class="actions">
+      <button id="playErrorDiagnose" type="button">詳しく調べる</button>
+      <button id="playErrorCopy" type="button">コピー</button>
+      <button id="playErrorClose" type="button">閉じる</button>
+    </div>
+  </div>
+</div>
+
+<!-- 形式の詳細と検査。一覧の長押し、プレーヤーの &#9432;、
+     再生エラーの「詳しく調べる」から開く。 -->
+<div id="diag" hidden>
+  <div id="diagSheet">
+    <div id="diagHead">
+      <h2 id="diagTitle">形式を調べています…</h2>
+      <button id="diagClose" type="button" aria-label="閉じる">&#10005;</button>
+    </div>
+    <div id="diagBody"></div>
+    <div id="diagActions">
+      <button id="diagQuick" type="button">壊れていないか調べる</button>
+      <button id="diagDeep" type="button">全編を検査</button>
+      <button id="diagCopy" type="button">コピー</button>
+    </div>
+  </div>
+</div>
+
+<script src="/vr.js"></script>
+<script src="/app.js"></script>
+</body>
+</html>
